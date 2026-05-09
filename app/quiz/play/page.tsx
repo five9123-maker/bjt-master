@@ -130,6 +130,9 @@ export default function QuizPlayPage({
   const markStatus = useStore((s) => s.markStatus);
   const addStudyTime = useStore((s) => s.addStudyTime);
   const ttsSpeed = useStore((s) => s.settings.ttsSpeed);
+  const globalShowReading = useStore((s) => s.settings.showReading);
+  // 퀴즈 중 로컬 토글 — 전역 설정 초기값 사용, 변경해도 설정에 영향 없음
+  const [showReading, setShowReading] = useState(globalShowReading);
   const startRef = useRef(Date.now());
 
   // 퀴즈 아이템 생성 (1회만)
@@ -238,9 +241,25 @@ export default function QuizPlayPage({
           ←
         </button>
         <span className="text-sm font-medium">{idx + 1} / {items.length}</span>
-        <span className="text-xs text-[var(--muted-foreground)]">
-          {type === 'jp-to-kr' ? 'JP→KR' : type === 'kr-to-jp' ? 'KR→JP' : '듣기'}
-        </span>
+        <div className="flex items-center gap-2">
+          {/* 후리가나 토글 */}
+          {type !== 'listening' && (
+            <button
+              onClick={() => setShowReading((v) => !v)}
+              title={showReading ? '후리가나 숨기기' : '후리가나 표시'}
+              className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                showReading
+                  ? 'bg-[var(--gold,#b08030)] text-white border-[var(--gold,#b08030)]'
+                  : 'border-[var(--border)] text-[var(--muted-foreground)]'
+              }`}
+            >
+              あ
+            </button>
+          )}
+          <span className="text-xs text-[var(--muted-foreground)]">
+            {type === 'jp-to-kr' ? 'JP→KR' : type === 'kr-to-jp' ? 'KR→JP' : '듣기'}
+          </span>
+        </div>
       </div>
 
       <Progress value={Math.round(((idx + 1) / items.length) * 100)} className="h-1.5" />
@@ -258,7 +277,9 @@ export default function QuizPlayPage({
         ) : type === 'jp-to-kr' ? (
           <>
             <p className="font-ja text-4xl font-bold text-center">{item.word.japanese}</p>
-            <p className="text-[var(--muted-foreground)]">{item.word.reading}</p>
+            {showReading && (
+              <p className="text-[var(--muted-foreground)]">{item.word.reading}</p>
+            )}
             <SpeakButton text={item.word.japanese} size="sm" />
           </>
         ) : (
