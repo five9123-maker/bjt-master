@@ -13,17 +13,36 @@ interface Settings {
   fontSize: 'sm' | 'md' | 'lg';
 }
 
+export type ExamLevel = 'J1' | 'J2' | 'J3' | 'J4' | 'J5';
+
+export interface ExamResult {
+  id: string;
+  date: number;
+  score: number;
+  level: ExamLevel;
+  totalQ: number;
+  correct: number;
+  timeUsed: number;
+  timeLimit: number;
+  difficulty: string;
+  byType: Record<string, { correct: number; total: number }>;
+  byCategory: Record<string, { correct: number; total: number }>;
+  wrongWordIds: string[];
+}
+
 interface AppState {
   progress: Record<string, UserProgress>;
   dailyStats: DailyStats[];
   streak: number;
   totalStudySeconds: number;
   settings: Settings;
+  examHistory: ExamResult[];
   updateProgress: (wordId: string, update: Partial<UserProgress>) => void;
   markStatus: (wordId: string, status: StudyStatus) => void;
   addStudyTime: (seconds: number) => void;
   resetProgress: () => void;
   updateSettings: (settings: Partial<Settings>) => void;
+  saveExamResult: (result: ExamResult) => void;
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -37,6 +56,14 @@ const defaultSettings: Settings = {
   fontSize: 'md',
 };
 
+export const scoreToLevel = (score: number): ExamLevel => {
+  if (score >= 90) return 'J1';
+  if (score >= 75) return 'J2';
+  if (score >= 60) return 'J3';
+  if (score >= 45) return 'J4';
+  return 'J5';
+};
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -45,6 +72,7 @@ export const useStore = create<AppState>()(
       streak: 0,
       totalStudySeconds: 0,
       settings: defaultSettings,
+      examHistory: [],
 
       updateProgress: (wordId, update) => {
         set((s) => ({
@@ -83,7 +111,7 @@ export const useStore = create<AppState>()(
           const dailyStats = existing
             ? s.dailyStats.map((d) =>
                 d.date === dateStr
-                  ? { ...d, studySeconds: d.studySeconds + seconds, wordsStudied: d.wordsStudied }
+                  ? { ...d, studySeconds: d.studySeconds + seconds }
                   : d
               )
             : [...s.dailyStats, { date: dateStr, wordsStudied: 0, studySeconds: seconds }];
@@ -101,19 +129,20 @@ export const useStore = create<AppState>()(
               break;
             }
           }
-
-          return {
-            dailyStats,
-            streak,
-            totalStudySeconds: s.totalStudySeconds + seconds,
-          };
+          return { dailyStats, streak, totalStudySeconds: s.totalStudySeconds + seconds };
         });
       },
 
-      resetProgress: () => set({ progress: {}, dailyStats: [], streak: 0, totalStudySeconds: 0 }),
+      resetProgress: () =>
+        set({ progress: {}, dailyStats: [], streak: 0, totalStudySeconds: 0 }),
 
       updateSettings: (settings) =>
         set((s) => ({ settings: { ...s.settings, ...settings } })),
+
+      saveExamResult: (result) =>
+        set((s) => ({
+          examHistory: [result, ...s.examHistory].slice(0, 5),
+        })),
     }),
     { name: 'bjt-master:store' }
   )

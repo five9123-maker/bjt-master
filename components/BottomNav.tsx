@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 const NAV = [
   { href: '/', label: '홈', icon: '🏠' },
   { href: '/learn', label: '단어', icon: '📚' },
-  { href: '/learn/flip', label: '플립', icon: '🃏' },
-  { href: '/quiz', label: '퀴즈', icon: '✏️' },
+  { href: '/quiz', label: '연습', icon: '✏️' },
+  { href: '/exam', label: '실전', icon: '📝' },
   { href: '/settings', label: '설정', icon: '⚙️' },
 ];
 
